@@ -8,8 +8,20 @@
 ##########################################################
 
 #set path
-path = "D:/Travail/MIAGE/TP_R/data/gun-violence-data.csv" #TODO : entrer le chemin relatif vers votre jeu de données
+path = "./data/gun-violence-data.csv"
 data = read.csv(path, header=T, sep = ",")
 
 #on affiche les données
 head(data)
+
+### PHASE 1
+
+
+
+### PHASE 2
+
+
+
+### PHASE 3
+
+
