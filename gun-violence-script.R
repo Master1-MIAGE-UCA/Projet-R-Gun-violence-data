@@ -31,7 +31,7 @@ library(lubridate)
 path = "./data/gun-violence-data.csv"
 data = read.csv(path, header=TRUE, stringsAsFactors = FALSE, na.strings=c("NA", ""))
 
-df1 <- subset(df, select = -c(incident_url_fields_missing,location_description,notes,incident_url,incident_characteristics,longitude,latitude,sources, source_url))
+df1 <- subset(data, select = -c(incident_url_fields_missing,location_description,notes,incident_url,incident_characteristics,longitude,latitude,sources, source_url))
 # nombre  de blesses;
 # nombre de morts;
 # nombre de malfaiteurs;
