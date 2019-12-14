@@ -1,4 +1,25 @@
 install.packages('lubridate')
+install.packages('xts')
+install.packages('zoo')
+install.packages('splitstackshape')
+install.packages('scales')
+install.packages('gridExtra')
+install.packages('stringr')
+install.packages('tibble')
+install.packages('ggplot2')
+install.packages('readr')
+install.packages('knitr')
+install.packages('stats')
+install.packages('graphics')
+install.packages('utils')
+install.packages('methods')
+install.packages('corrplot')
+install.packages('dplyr')
+
+
+
+
+
 library(knitr)
 library(dplyr)
 library(readr)
@@ -12,8 +33,12 @@ library(ggrepel)
 library(leaflet)
 library(rgdal)
 library(tibble)
-library(purr)
+library(purrr)
 library(splitstackshape)
+library(PerformanceAnalytics) 
+library(tidyr)
+library(corrplot)
+
 
 library(lubridate)
 df = read.csv('/Users/ALEXIS/Downloads/gun-violence-data_01-2013_03-2018.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
@@ -68,12 +93,48 @@ df1$participant_type=type$participant_type
 
 #Now, after some preprocessing and the reorganization of the columns, we will kept only the
 #columns needed.
-#State, n_killed, n_injured, participant_age
+#State, n_killed, n_injured, participant_ages
 df2 <- subset(df1, select = c(n_killed, n_injured, state, participant_age))
 df2
 
+#We delete the last NA
+df2=na.omit(df2)
+summary(df2$participant_age)
+#We can see a crazy value, we will delete it
+df2 <- df2[-which(df2$participant_age==209),]
+dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
 
 
 
+
+
+
+
+bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
+ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+
+summary(df2$participant_age)
+
+
+cor(dfnum, method = c("pearson", "kendall", "spearman"))
+mcor <- cor(dfnum)
+mcor
+
+col<- colorRampPalette(c("blue", "white", "red"))(20) 
+heatmap(x = mcor, col = col, symm = TRUE)
+corrplot(mcor, type="upper", order="hclust", tl.col="black", tl.srt=45)
+
+chart.Correlation(dfnum, histogram=TRUE, pch=19)
+
+#As we can see, there is no correlation  in our numerical subset
+bystateinj <- df2 %>% group_by(state) %>% summarize(n = n(), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", ninj)
+ggplot(bystateinj, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+bystatekill <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed))%>% tidyr::gather(key = "type", value = "num", nkill)
+ggplot(bystatekill, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
+ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
 
 
