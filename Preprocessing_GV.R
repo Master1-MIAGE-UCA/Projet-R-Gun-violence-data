@@ -109,6 +109,7 @@ dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
 
 
 
+#Question 1
 
 bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
 ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
@@ -138,3 +139,49 @@ bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed),
 ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
 
 
+#Question 3
+df3 <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
+df3$date <- ymd(df3$date)
+str(df3$date)
+
+
+
+df3$month <- month(df3$date, label=TRUE)
+df3$year <- year(df3$date)
+
+df3$month <- factor(df3$month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), labels = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+
+plotly::ggplotly(df3 %>% select(month) %>% count(month) %>%
+                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
+                   scale_y_continuous(labels=comma) +
+                   labs(x='Months', y='Number of incidents', title='Incidents by Month'))
+
+
+plotly::ggplotly(df3 %>% select(year, month) %>% group_by(year) %>% count(month) %>%
+                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
+                   scale_y_continuous(labels=comma) +  facet_grid(.~year) +
+                   labs(x='Months', y='Number of incidents', title='Incidents by Month by year'))
+
+
+
+df3num <- subset(df3, select = c(n_killed, n_injured, participant_age, month, year))
+
+df3num$participant_age
+class(df3$month)
+df3num$month=as.numeric(df3num$month)
+df3num$year=as.numeric(df3num$year)
+
+df3num<-na.omit(df3num)
+cor(df3num, method = c("pearson","kendall","spearman"))
+mcor1 <- cor(df3num)
+mcor1
+
+col<- colorRampPalette(c("blue", "white", "red"))
+corrplot(mcor1, type="upper", order="hclust", tl.col="black", tl.srt=45)
+
+chart.Correlation(df3num, histogram=TRUE, pch=19)
+
+
+
+#We can conclude that the only month which had a correlation over the year is July, maybe with the 4th.
