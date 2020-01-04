@@ -225,7 +225,7 @@ t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
 # On compare et on regarde le résultat 
 if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") appartenant à l'intervalle [", 
-      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on accepte H0\n")
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
 } else {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") n'appartenant pas à l'intervalle [", 
       -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
@@ -248,7 +248,7 @@ t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
 # On compare et on regarde le résultat 
 if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") appartenant à l'intervalle [", 
-      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on accepte H0\n")
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
 } else {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") n'appartenant pas à l'intervalle [", 
       -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
@@ -272,7 +272,7 @@ t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
 # On compare et on regarde le résultat 
 if(t_Age >= -tPVAL && t_Age <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") appartenant à l'intervalle [", 
-      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on accepte H0\n")
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
 } else {
   cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") n'appartenant pas à l'intervalle [", 
       -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
