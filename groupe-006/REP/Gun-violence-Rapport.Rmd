@@ -144,6 +144,36 @@ dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
 
 Est-ce qu’il y a des corrélations (linéaires) entre les variables de V ?
 
+```{r, warning=FALSE}
+bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
+ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+
+summary(df2$participant_age)
+
+cor(dfnum, method = c("pearson", "kendall", "spearman"))
+mcor <- cor(dfnum)
+mcor
+
+col<- colorRampPalette(c("blue", "white", "red"))(20) 
+heatmap(x = mcor, col = col, symm = TRUE)
+corrplot(mcor, type="upper", order="hclust", tl.col="black", tl.srt=45)
+
+chart.Correlation(dfnum, histogram=TRUE, pch=19)
+
+#As we can see, there is no correlation  in our numerical subset
+bystateinj <- df2 %>% group_by(state) %>% summarize(n = n(), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", ninj)
+ggplot(bystateinj, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+bystatekill <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed))%>% tidyr::gather(key = "type", value = "num", nkill)
+ggplot(bystatekill, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
+ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+
+```
+
+
 ### Deuxième question :
 
 Prenez les données de la période entre le 1er janvier 2013 et le 31 décembre 2017 pour calculer les quantités statistiques (moyenne, écart type, etc) et considérez les données entre le 1 janvier 2018 et le 31 mars 2018 comme un échantillon. Est-ce que l’on peut dire que les valeurs moyens des variables dans V ont significativement changé par rapport au passé ?
@@ -152,9 +182,39 @@ Nous commençons par séléctionner la partie de la data que nous avons besoin (
 
 
 ### Troisième question :
-Si l’on prend en compte aussi le mois de l’ann´ee dans lequel le fait divers a ´et´e commis, est-ce qu’il y a
-une corr´elation forte entre le nombre de fait divers et le mois de l’ann´ee ? Quels conclusions en tirez-vous ?
+Si l’on prend en compte aussi le mois de l’année dans lequel le fait divers a été commis, est-ce qu’il y a une corrélation forte entre le nombre de fait divers et le mois de l’année ? Quels conclusions en tirez-vous ?
+
+```{r, warning=FALSE}
+df3 <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
+df3$date <- ymd(df3$date)
+str(df3$date)
+
+#We delete the last NA
+df3=na.omit(df3)
+
+df3$month <- month(df3$date, label=TRUE)
+df3$year <- year(df3$date)
+
+df3$month <- factor(df3$month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), labels = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+plotly::ggplotly(df3 %>% select(month) %>% count(month) %>%
+                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
+                   scale_y_continuous(labels=comma) +
+                   labs(x='Months', y='Number of incidents', title='Incidents by Month'))
+
+
+plotly::ggplotly(df3 %>% select(year, month) %>% group_by(year) %>% count(month) %>%
+                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
+                   scale_y_continuous(labels=comma) +  facet_grid(.~year) +
+                   labs(x='Months', y='Number of incidents', title='Incidents by Month by year'))
+
+
+```
 
 ## Les finalités de cette études :
 
 
+## Présentation des membres : 
+### Vighi Alexis
+### Felin Rémi 
+### Mosbah Yasmin
