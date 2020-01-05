@@ -56,7 +56,7 @@ library(lubridate)
 
 On commence par créer une dataframe (df) en indiquant que tout les NA et les espaces sont des NA :
 ```{r data , warning=FALSE}
-df = read.csv('C:/Users/Yasmin/Documents/M1MIAGE/Data BASE/soutenance/Projet-R-Gun-violence-data-master/data/gun-violence-data.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
+df = read.csv('C:/Users/Yasmin/Documents/M1MIAGE/Data BASE/soutenance/Projet-R-Gun-violence-data/data/gun-violence-data.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
 ```
 
 
@@ -142,7 +142,7 @@ dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
 
 ### Première question :
 
-Est-ce qu’il y a des corrélations (linéaires) entre les variables de V ?
+#### Est-ce qu’il y a des corrélations (linéaires) entre les variables de V ?
 
 ```{r, warning=FALSE}
 bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
@@ -160,8 +160,12 @@ heatmap(x = mcor, col = col, symm = TRUE)
 corrplot(mcor, type="upper", order="hclust", tl.col="black", tl.srt=45)
 
 chart.Correlation(dfnum, histogram=TRUE, pch=19)
+```
 
-#As we can see, there is no correlation  in our numerical subset
+Comme nous pouvons le voir il n'y a aucun correlation entre les subsets
+
+```{r, warning=FALSE}
+
 bystateinj <- df2 %>% group_by(state) %>% summarize(n = n(), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", ninj)
 ggplot(bystateinj, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
 
@@ -176,38 +180,145 @@ ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_b
 
 ### Deuxième question :
 
-Prenez les données de la période entre le 1er janvier 2013 et le 31 décembre 2017 pour calculer les quantités statistiques (moyenne, écart type, etc) et considérez les données entre le 1 janvier 2018 et le 31 mars 2018 comme un échantillon. Est-ce que l’on peut dire que les valeurs moyens des variables dans V ont significativement changé par rapport au passé ?
+#### Prenez les données de la période entre le 1er janvier 2013 et le 31 décembre 2017 pour calculer les quantités statistiques (moyenne, écart type, etc) et considérez les données entre le 1 janvier 2018 et le 31 mars 2018 comme un échantillon. Est-ce que l’on peut dire que les valeurs moyens des variables dans V ont significativement changé par rapport au passé ?
 
-Nous commençons par séléctionner la partie de la data que nous avons besoin (la période entre le 1er janvier 2013 et le 31 décembre 2017 et celle entre le 1 janvier 2018 et le 31 mars 2018).
+Nous commençons par séléctionner la partie de la data que nous avons besoin (la période entre le 1er janvier 2013 et le 31 décembre 2017 et celle entre le 1 janvier 2018 et le 31 mars 2018) :
 
+```{r, warning=FALSE}
+
+#Prenons les datas df1 avec les colonnes utiles
+data <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
+
+#et prenons les datas recueillis en 2018 (01-01-2018 -> 31-12-2018)
+data_2018 <- subset(data, data$date >= as.Date('2018-01-01') & data$date <= as.Date('2018-03-31'))
+
+#Pour la période suivante : 01-01-2013 -> 31-12-2017
+data_With_Periode <- subset(data, data$date >= as.Date('2013-01-01') & data$date <= as.Date('2017-12-31'))
+
+
+
+#Etudions plus en détail ce jeu de données
+summary(data_With_Periode)
+#a voir si on peut améliorer cette partie 
+
+#Considérons l'échantillon suivant : data_2018
+summary(data_2018)
+
+```
+
+
+Si nous comparons les résultats, nous remarquons les choses suivantes :
+
+H0 NB MORT : Le nombre de morts obtenus en 2018 a permis de modifier la moyenne de mort 
+HO NB BLESSE : Le nombre de blesses obtenus en 2018 a permis de modifier la moyenne de blesses 
+HO AGE PARTICIPANT : L'age des participants releves en 2018 a permis de modifier la moyenne d'age 
+
+
+Pour les variables relatives aux nombres de mort, blesses et l'age des protagonistes : nous effectuerons un test bilatérale afin de valider ou non H0
+
+Nous etablissons nos fonctions au préalable ainsi elles faciliterons le traitement et ce sera plus lisible pour la suite.
+
+```{r, warning=FALSE}
+
+RejectRegion <- function(mu, n, xbar, sigma) {
+  res = abs(xbar-mu)/(sigma/sqrt(n))
+  return(res)
+}
+
+p_value <- function(alpha, ddl) {
+  pval = qt(alpha, df=ddl, lower.tail = FALSE)
+  return(pval)
+}
+
+sigma_value <- function(data) {
+  res = var(data)
+  return(res)
+}
+
+```
+
+#### Le debut des tests :
+
+```{r, warning=FALSE}
+#taille de l'echantillon
+n <- length(data_2018)
+# On trouve notre valeur de comparaison (P-value) avec alpha = 5%
+tPVAL <- p_value(0.05, n-1)
+
+```
+
+Pour H0 NB MORT : Le nombre de morts obtenus en 2018 a permis de modifier la moyenne de mort
+
+```{r, warning=FALSE}
+
+#d'après les resultats obtenus, on a :
+mu_NbMort <- mean(data_2018$n_killed)
+Xbar_NbMort <- mean(data_With_Periode$n_killed)
+sigma_NbMort <- sigma_value(data_2018$n_killed)
+
+# On applique notre test avec les données obtenues
+t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
+
+# On compare et on regarde le résultat 
+if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
+  cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") appartenant à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
+} else {
+  cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") n'appartenant pas à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
+}
+
+```
+
+Pour HO NB BLESSE : Le nombre de blesses obtenus en 2018 a permis de modifier la moyenne de blesses 
+
+```{r, warning=FALSE}
+#d'après les resultats obtenus, on a :
+mu_NbBlesses <- mean(data_2018$n_injured)
+Xbar_NbBlesses <- mean(data_With_Periode$n_injured)
+sigma_NbBlesses <- sigma_value(data_2018$n_injured)
+
+# On applique notre test avec les données obtenues
+t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
+
+# On compare et on regarde le résultat 
+if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
+  cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") appartenant à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
+} else {
+  cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") n'appartenant pas à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
+}
+```
+
+Pour HO AGE PARTICIPANT : L'age des participants releves en 2018 a permis de modifier la moyenne d'age 
+
+```{r, warning=FALSE}
+
+#d'après les resultats obtenus, on a :
+mu_Age <- mean(data_2018$participant_age)
+Xbar_Age <- 29.63 # mean(data_With_Periode$participant_age) la cmd ne marche pas ... à voir
+#tmp : on la saisie à la main
+sigma_Age <- sigma_value(data_2018$participant_age)
+
+# On applique notre test avec les données obtenues
+t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
+
+# On compare et on regarde le résultat 
+if(t_Age >= -tPVAL && t_Age <= tPVAL) {
+  cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") appartenant à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi, on ne peut pas refuser H0\n")
+} else {
+  cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") n'appartenant pas à l'intervalle [", 
+      -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
+}
+
+```
 
 ### Troisième question :
 Si l’on prend en compte aussi le mois de l’année dans lequel le fait divers a été commis, est-ce qu’il y a une corrélation forte entre le nombre de fait divers et le mois de l’année ? Quels conclusions en tirez-vous ?
 
 ```{r, warning=FALSE}
-df3 <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
-df3$date <- ymd(df3$date)
-str(df3$date)
-
-#We delete the last NA
-df3=na.omit(df3)
-
-df3$month <- month(df3$date, label=TRUE)
-df3$year <- year(df3$date)
-
-df3$month <- factor(df3$month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), labels = c(1,2,3,4,5,6,7,8,9,10,11,12))
-
-plotly::ggplotly(df3 %>% select(month) %>% count(month) %>%
-                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
-                   scale_y_continuous(labels=comma) +
-                   labs(x='Months', y='Number of incidents', title='Incidents by Month'))
-
-
-plotly::ggplotly(df3 %>% select(year, month) %>% group_by(year) %>% count(month) %>%
-                   ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
-                   scale_y_continuous(labels=comma) +  facet_grid(.~year) +
-                   labs(x='Months', y='Number of incidents', title='Incidents by Month by year'))
-
 
 ```
 
