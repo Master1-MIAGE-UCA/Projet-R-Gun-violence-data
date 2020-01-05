@@ -1,0 +1,160 @@
+---
+title: "Gun-violence-Rapport"
+author: "Felin Rémi, Vighi Alexis, Mosbah Yasmin"
+date: "05/01/2020"
+output: html_document
+---
+
+# Sujet : Gun Violence Data
+## Énoncé :
+Il s’agira de mener une série de statistiques sur l’archive du même intitulé. Cet archive (au format CSV) contient des entrée relative aux faits divers causés par des armes à feu qui ont eu lieu aux Etats Unis entre le 1er janvier 2013 et le 31 mars 2018. Il s’agira de montrer l’évolution d’un certain nombre de variables pendant la période concernée, d’en calculer la moyenne et l’écart type (quand cela est possible). L’ensemble des variables qui nous intéressent contient :
+— nombre de blessés ;
+— nombre de morts ;
+— nombre de malfaiteurs ;
+— age des malfaiteurs ;
+— état dans lequel le fait divers a eu lieu.
+
+## Analyse du sujet :
+Le sujet nous demande ici d'étudier une base de donnée regroupant diverses informations sur des faits causés par les armes aux Etats Unis entre le 1er Janvier 2013 et le 31 Mars 2018.
+Le but de cet étude est d'observer l'évolution de certaines variables au fur  et a mesure du temps. C'est variables concerne le nombre de blessés, le nombre de morts, le nombre de malfaiteurs, leur age et l'état dans lequel le fait divers a eu lieu.
+
+
+
+### Description des données utilisées :
+Les données de cette étude ont été récoltés par une société à but non lucratif crée en 2013 pour fournir un accès au public des informations précises sur la violence liée aux armes à feu aux États-Unis.
+Cette société a collecté et vérifié l'exactitude des informations.
+La base de donnée comporte pas moins de 260 000 incidents de violence armée survenue entre entre le 1er Janvier 2013 et le 31 Mars 2018 aux Etats Unis.
+Les données sont triées par date (ordre croissant).
+Chaque donnée comporte une variété d'informations, dont un id, une date, l'état ou s'est déroulé le crime, la ville, l'adresse, le nombre de morts, le nombre de blessés, le type d'arme utilisé, le nombre d'armes a feu et même l'age et le genre des participants.
+
+### Librairie utilisée :
+
+```{r library , warning = FALSE, message = FALSE}
+library(knitr)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tibble)
+library(stringr)
+library(gridExtra)
+library(scales)
+library(lubridate)
+library(ggrepel)
+library(leaflet)
+library(rgdal)
+library(tibble)
+library(purrr)
+library(splitstackshape)
+library(PerformanceAnalytics) 
+library(tidyr)
+library(corrplot)
+
+library(lubridate)
+```
+
+### Optimisation de la base de données pour facilité son utilisation :
+
+On commence par créer une dataframe (df) en indiquant que tout les NA et les espaces sont des NA :
+```{r data , warning=FALSE}
+df = read.csv('C:/Users/Yasmin/Documents/M1MIAGE/Data BASE/soutenance/Projet-R-Gun-violence-data-master/data/gun-violence-data.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
+```
+
+
+Nous supprimons les colonnes inutiles dans une nouvelle dataframe (df1):
+```{r ,warning=FALSE}
+df1 <- subset(df, select = -c(incident_url_fields_missing,location_description,notes,incident_url,incident_characteristics,longitude,latitude,sources, source_url))
+
+#Valeurs manquantes
+apply(df1, 2, function(col)sum(is.na(col))/length(col))
+```
+
+Nous récoltons une base de données ne comportant que les variables qui nous intéressent. 
+Cette base de donnée contient beaucoup de valeurs manquantes.
+Alors nous mesurons en pourcentage la qualité des données de chaque colonnes pour ensuite supprimer celles qui ont plus de 40% de valeurs manquantes :
+```{r, warning=FALSE}
+
+#We'll delete all the columns with more than 40% of missing values
+df1 <- subset(df1, select = -c(gun_stolen,gun_type,n_guns_involved,participant_name,participant_relationship))
+apply(df1, 2, function(col)sum(is.na(col))/length(col))
+```
+
+Fondamentalement, nous devrions supprimer participant_age, car cette colonne contient 38,5 % de données manquantes,
+Mais nous devons le garder pour l'étude.
+
+Nous effaçons toutes les valeurs manquantes, nous pourrions les remplacer par la méthode Miss FAMD, mais comme nous ne faisons pas de machine learning ce n'est pas nécessaire.
+
+```{r, warning=FALSE}
+
+df1=na.omit(df1)
+
+```
+
+Nous formatons certaines données (celles comportant des : ||) afin d’avoir des valeurs numériques et une meilleure lisibilité:
+```{r,warning = FALSE, message = FALSE}
+#We'll change some data for the readibility of them
+age=cSplit(df1,c("participant_age"),sep="||",direction="wide",drop=FALSE)
+age$age=gsub(".*::","",age$participant_age)
+age$age=as.numeric(age$age)
+
+df1$participant_age=age$age
+
+type=cSplit(df1,"participant_status",sep="||" ,direction="wide",drop=FALSE)
+type$participant_status=gsub(".*::","",type$participant_status)
+
+df1$participant_status=type$participant_status
+
+type=cSplit(df1,"participant_age_group",sep="||",direction="wide",drop=FALSE)
+type$participant_age_group=gsub(".*::","",type$participant_age_group)
+
+df1$participant_age_group=type$participant_age_group
+
+type=cSplit(df1,c("participant_gender"),sep="||",direction="wide",drop=FALSE)
+type$participant_gender=gsub(".*::","",type$participant_gender)
+df1$participant_gender=type$participant_gender
+
+type=cSplit(df1,c("participant_type"),sep="||",direction="wide",drop=FALSE)
+type$participant_type=gsub(".*::","",type$participant_type)
+
+df1$participant_type=type$participant_type
+```
+
+Nous créons une nouvelle dataframe(df2) à partir des colonnes de la précédentes dataframes(df1) en gardant seulement les  colonnes désiré pour l'étude :
+```{r, warning=FALSE}
+
+#Now, after some preprocessing and the reorganization of the columns, we will kept only the
+#columns needed.
+#State, n_killed, n_injured, participant_ages
+df2 <- subset(df1, select = c(n_killed, n_injured, state, participant_age))
+head(df2)
+```
+
+Nous supprimons les NA qui restent et les valeurs peu probables :
+```{r, warning=FALSE}
+#We delete the last NA
+df2=na.omit(df2)
+summary(df2$participant_age)
+#We can see a crazy value, we will delete it
+df2 <- df2[-which(df2$participant_age==209),]
+dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
+
+```
+
+
+### Première question :
+
+Est-ce qu’il y a des corrélations (linéaires) entre les variables de V ?
+
+### Deuxième question :
+
+Prenez les données de la période entre le 1er janvier 2013 et le 31 décembre 2017 pour calculer les quantités statistiques (moyenne, écart type, etc) et considérez les données entre le 1 janvier 2018 et le 31 mars 2018 comme un échantillon. Est-ce que l’on peut dire que les valeurs moyens des variables dans V ont significativement changé par rapport au passé ?
+
+Nous commençons par séléctionner la partie de la data que nous avons besoin (la période entre le 1er janvier 2013 et le 31 décembre 2017 et celle entre le 1 janvier 2018 et le 31 mars 2018).
+
+
+### Troisième question :
+Si l’on prend en compte aussi le mois de l’ann´ee dans lequel le fait divers a ´et´e commis, est-ce qu’il y a
+une corr´elation forte entre le nombre de fait divers et le mois de l’ann´ee ? Quels conclusions en tirez-vous ?
+
+## Les finalités de cette études :
+
+
