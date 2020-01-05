@@ -149,30 +149,30 @@ ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_b
 
 # Question 2
 
-#Prenons les datas df2 et ajoutons les dates
-data1 <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
+#Prenons les datas df1 avec les colonnes utiles
+data <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
 
-#On supprime les derniers NA
-data1 <- data1 %>% drop_na()
+#et prenons les datas recueillis en 2018 (01-01-2018 -> 31-12-2018)
+data_2018 <- subset(data, data$date >= as.Date('2018-01-01') & data$date <= as.Date('2018-03-31'))
 
 #Pour la période suivante : 01-01-2013 -> 31-12-2017
-data1WithPeriod <- subset(data1, data1$date >= as.Date('2013-01-01') & data1$date <= as.Date('2017-12-31'))
+data_With_Periode <- subset(data, data$date >= as.Date('2013-01-01') & data$date <= as.Date('2017-12-31'))
+
+
 
 #Etudions plus en détail ce jeu de données
-summary(data1WithPeriod)
+summary(data_With_Periode)
 #a voir si on peut améliorer cette partie 
 
-#Considérons l'échantillon suivant : data1 -> df1 avec seulement les colonnes qui nous intéressent
-summary(data1)
+#Considérons l'échantillon suivant : data_2018
+summary(data_2018)
 
-# NOMBRE DE LIGNE POUR 2018 : 6120
-length2018 = length(data1$state) - length(data1WithPeriod$state)
 
 # Si nous comparons les résultats, nous remarquons les choses suivantes :
 
-# H0 NB MORT : Le nombre de morts obtenus en 2018 a permis de modifier la moyenne de mort (0.3787 -> 0.3777)
-# HO NB BLESSE : Le nombre de blesses obtenus en 2018 a permis de modifier la moyenne de blesses (0.5487 -> 0.5534)
-# HO AGE PARTICIPANT : L'age des participants releves en 2018 a permis de modifier la moyenne d'age (29.67 -> 29.63)
+# H0 NB MORT : Le nombre de morts obtenus en 2018 a permis de modifier la moyenne de mort 
+# HO NB BLESSE : Le nombre de blesses obtenus en 2018 a permis de modifier la moyenne de blesses 
+# HO AGE PARTICIPANT : L'age des participants releves en 2018 a permis de modifier la moyenne d'age 
 
 #
 # Pour les variables relatives aux nombres de mort, blesses et l'age des protagonistes : nous effectuerons
@@ -204,7 +204,7 @@ sigma_value <- function(data) {
 #data fixes
 
 #taille de l'echantillon
-n <- length2018
+n <- length(data_2018)
 # On trouve notre valeur de comparaison (P-value) avec alpha = 5%
 tPVAL <- p_value(0.05, n-1)
 
@@ -215,9 +215,9 @@ tPVAL <- p_value(0.05, n-1)
 #
 
 #d'après les resultats obtenus, on a :
-mu_NbMort <- mean(data1$n_killed)
-Xbar_NbMort <- mean(data1WithPeriod$n_killed)
-sigma_NbMort <- sigma_value(data1$n_killed)
+mu_NbMort <- mean(data_2018$n_killed)
+Xbar_NbMort <- mean(data_With_Periode$n_killed)
+sigma_NbMort <- sigma_value(data_2018$n_killed)
 
 # On applique notre test avec les données obtenues
 t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
@@ -238,9 +238,9 @@ if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
 #
 
 #d'après les resultats obtenus, on a :
-mu_NbBlesses <- mean(data1$n_injured)
-Xbar_NbBlesses <- mean(data1WithPeriod$n_injured)
-sigma_NbBlesses <- sigma_value(data1$n_injured)
+mu_NbBlesses <- mean(data_2018$n_injured)
+Xbar_NbBlesses <- mean(data_With_Periode$n_injured)
+sigma_NbBlesses <- sigma_value(data_2018$n_injured)
 
 # On applique notre test avec les données obtenues
 t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
@@ -261,10 +261,10 @@ if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
 #
 
 #d'après les resultats obtenus, on a :
-mu_Age <- mean(data1$participant_age)
-Xbar_Age <- 29.63 # mean(data1WithPeriod$participant_age) la cmd ne marche pas ... à voir
+mu_Age <- mean(data_2018$participant_age)
+Xbar_Age <- 29.63 # mean(data_With_Periode$participant_age) la cmd ne marche pas ... à voir
 #tmp : on la saisie à la main
-sigma_Age <- sigma_value(data1$participant_age)
+sigma_Age <- sigma_value(data_2018$participant_age)
 
 # On applique notre test avec les données obtenues
 t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
