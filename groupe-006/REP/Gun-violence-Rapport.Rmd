@@ -1,7 +1,7 @@
 ---
 title: "Gun-violence-Rapport"
 author: "Felin Rémi, Vighi Alexis, Mosbah Yasmin"
-date: "05/01/2020"
+date: "07/01/2020"
 output: html_document
 ---
 
@@ -29,7 +29,7 @@ La base de donnée comporte pas moins de 260 000 incidents de violence armée su
 Les données sont triées par date (ordre croissant).
 Chaque donnée comporte une variété d'informations, dont un id, une date, l'état ou s'est déroulé le crime, la ville, l'adresse, le nombre de morts, le nombre de blessés, le type d'arme utilisé, le nombre d'armes a feu et même l'age et le genre des participants.
 
-### Librairie utilisée :
+### Librairies utilisées :
 
 ```{r library , warning = FALSE, message = FALSE}
 library(knitr)
@@ -352,7 +352,7 @@ respear3nkyr
 respear3nimth<-cor.test(df3num$n_injured,df3num$month, method="pearson")
 respear3nimth
 ```
-
+C'est encore loin de 1 et de -1 il n'y a donc pas de corrélations.
 
 
 
