@@ -7,12 +7,14 @@ output: html_document
 
 # Sujet : Gun Violence Data
 ## Énoncé :
-Il s’agira de mener une série de statistiques sur l’archive du même intitulé. Cet archive (au format CSV) contient des entrée relative aux faits divers causés par des armes à feu qui ont eu lieu aux Etats Unis entre le 1er janvier 2013 et le 31 mars 2018. Il s’agira de montrer l’évolution d’un certain nombre de variables pendant la période concernée, d’en calculer la moyenne et l’écart type (quand cela est possible). L’ensemble des variables qui nous intéressent contient :
+Il s’agira de mener une série de tests statistiques sur l’archive du même intitulé. Cet archive (au format CSV) contient des entrées relatives aux faits divers causés par des armes à feu qui ont eu lieu aux Etats Unis entre le 1er janvier 2013 et le 31 mars 2018. Il s’agira de montrer l’évolution d’un certain nombre de variables pendant la période concernée, d’en calculer la moyenne et l’écart type (quand cela est possible). L’ensemble des variables qui nous intéressent contient :
 — nombre de blessés ;
 — nombre de morts ;
 — nombre de malfaiteurs ;
 — age des malfaiteurs ;
 — état dans lequel le fait divers a eu lieu.
+
+Le dataset ne contient pas la variable nombre de malfaiteurs, nous ne pouvons donc pas la traiter.
 
 ## Analyse du sujet :
 Le sujet nous demande ici d'étudier une base de donnée regroupant diverses informations sur des faits causés par les armes aux Etats Unis entre le 1er Janvier 2013 et le 31 Mars 2018.
@@ -21,7 +23,7 @@ Le but de cet étude est d'observer l'évolution de certaines variables au fur  
 
 
 ### Description des données utilisées :
-Les données de cette étude ont été récoltés par une société à but non lucratif crée en 2013 pour fournir un accès au public des informations précises sur la violence liée aux armes à feu aux États-Unis.
+Les données de cette étude ont été récoltés par une société à but non lucratif créée en 2013 pour fournir un accès au public des informations précises sur la violence liée aux armes à feu aux États-Unis.
 Cette société a collecté et vérifié l'exactitude des informations.
 La base de donnée comporte pas moins de 260 000 incidents de violence armée survenue entre entre le 1er Janvier 2013 et le 31 Mars 2018 aux Etats Unis.
 Les données sont triées par date (ordre croissant).
@@ -39,16 +41,12 @@ library(stringr)
 library(gridExtra)
 library(scales)
 library(lubridate)
-library(ggrepel)
-library(leaflet)
-library(rgdal)
 library(tibble)
 library(purrr)
 library(splitstackshape)
 library(PerformanceAnalytics) 
 library(tidyr)
 library(corrplot)
-
 library(lubridate)
 ```
 
@@ -56,23 +54,21 @@ library(lubridate)
 
 On commence par créer une dataframe (df) en indiquant que tout les NA et les espaces sont des NA :
 ```{r data , warning=FALSE}
-df = read.csv('C:/Users/Yasmin/Documents/M1MIAGE/Data BASE/soutenance/Projet-R-Gun-violence-data/data/gun-violence-data.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
+df = read.csv('/Users/ALEXIS/Downloads/gun-violence-data_01-2013_03-2018.csv', header=TRUE,stringsAsFactors = FALSE, na.strings=c("NA", ""))
 ```
 
 
 Nous supprimons les colonnes inutiles dans une nouvelle dataframe (df1):
 ```{r ,warning=FALSE}
 df1 <- subset(df, select = -c(incident_url_fields_missing,location_description,notes,incident_url,incident_characteristics,longitude,latitude,sources, source_url))
-
 #Valeurs manquantes
 apply(df1, 2, function(col)sum(is.na(col))/length(col))
 ```
 
-Nous récoltons une base de données ne comportant que les variables qui nous intéressent. 
+Nous créons une base de données ne comportant que les variables qui nous intéressent. 
 Cette base de donnée contient beaucoup de valeurs manquantes.
-Alors nous mesurons en pourcentage la qualité des données de chaque colonnes pour ensuite supprimer celles qui ont plus de 40% de valeurs manquantes :
+Alors nous mesurons en pourcentage la qualité des données de chaque colonnes pour ensuite supprimer celles qui ont plus de 30% de valeurs manquantes :
 ```{r, warning=FALSE}
-
 #We'll delete all the columns with more than 40% of missing values
 df1 <- subset(df1, select = -c(gun_stolen,gun_type,n_guns_involved,participant_name,participant_relationship))
 apply(df1, 2, function(col)sum(is.na(col))/length(col))
@@ -81,12 +77,10 @@ apply(df1, 2, function(col)sum(is.na(col))/length(col))
 Fondamentalement, nous devrions supprimer participant_age, car cette colonne contient 38,5 % de données manquantes,
 Mais nous devons le garder pour l'étude.
 
-Nous effaçons toutes les valeurs manquantes, nous pourrions les remplacer par la méthode Miss FAMD, mais comme nous ne faisons pas de machine learning ce n'est pas nécessaire.
+Nous effaçons toutes les valeurs manquantes, nous pourrions les remplacer par la méthode Miss FAMD, mais comme nous ne faisons pas de machine learning ce n'est donc pas nécessaire.
 
 ```{r, warning=FALSE}
-
 df1=na.omit(df1)
-
 ```
 
 Nous formatons certaines données (celles comportant des : ||) afin d’avoir des valeurs numériques et une meilleure lisibilité:
@@ -95,32 +89,23 @@ Nous formatons certaines données (celles comportant des : ||) afin d’avoir de
 age=cSplit(df1,c("participant_age"),sep="||",direction="wide",drop=FALSE)
 age$age=gsub(".*::","",age$participant_age)
 age$age=as.numeric(age$age)
-
 df1$participant_age=age$age
-
 type=cSplit(df1,"participant_status",sep="||" ,direction="wide",drop=FALSE)
 type$participant_status=gsub(".*::","",type$participant_status)
-
 df1$participant_status=type$participant_status
-
 type=cSplit(df1,"participant_age_group",sep="||",direction="wide",drop=FALSE)
 type$participant_age_group=gsub(".*::","",type$participant_age_group)
-
 df1$participant_age_group=type$participant_age_group
-
 type=cSplit(df1,c("participant_gender"),sep="||",direction="wide",drop=FALSE)
 type$participant_gender=gsub(".*::","",type$participant_gender)
 df1$participant_gender=type$participant_gender
-
 type=cSplit(df1,c("participant_type"),sep="||",direction="wide",drop=FALSE)
 type$participant_type=gsub(".*::","",type$participant_type)
-
 df1$participant_type=type$participant_type
 ```
 
-Nous créons une nouvelle dataframe(df2) à partir des colonnes de la précédentes dataframes(df1) en gardant seulement les  colonnes désiré pour l'étude :
+Nous créons un nouveau dataframe(df2) à partir des colonnes de la précédente dataframe(df1) en gardant seulement les  colonnes désirés pour l'étude :
 ```{r, warning=FALSE}
-
 #Now, after some preprocessing and the reorganization of the columns, we will kept only the
 #columns needed.
 #State, n_killed, n_injured, participant_ages
@@ -128,7 +113,7 @@ df2 <- subset(df1, select = c(n_killed, n_injured, state, participant_age))
 head(df2)
 ```
 
-Nous supprimons les NA qui restent et les valeurs peu probables :
+Nous supprimons les NA qui restent et les valeurs peu probables(valeurs abérrantes) :
 ```{r, warning=FALSE}
 #We delete the last NA
 df2=na.omit(df2)
@@ -136,7 +121,6 @@ summary(df2$participant_age)
 #We can see a crazy value, we will delete it
 df2 <- df2[-which(df2$participant_age==209),]
 dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
-
 ```
 
 
@@ -144,39 +128,41 @@ dfnum <- subset(df2, select = c(n_killed, n_injured, participant_age))
 
 #### Est-ce qu’il y a des corrélations (linéaires) entre les variables de V ?
 
+Afin de voir s'il y a des corrélations nous avons utilisé plusieurs méthodes, la première, est visuelle, à l'aide de plot, afin de vérifier s'il y a des tendances ou non.
+La seconde est statistique à l'aide des matrices de corrélations, nous devons préalablements formatés les données afin d'utiliser celles qui sont numériques
+
+Ici nous produisons des graphiques, par rapport aux états et nombres de morts et aux états et nombres de bléssés
 ```{r, warning=FALSE}
+bystateinj <- df2 %>% group_by(state) %>% summarize(n = n(), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", ninj)
+ggplot(bystateinj, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+bystatekill <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed))%>% tidyr::gather(key = "type", value = "num", nkill)
+ggplot(bystatekill, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
 bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
 ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
+```
 
-
+Ici nous faisons une matrice de corrélation de Pearson, qui nous montre l'absence de corrélation
+```{r}
 summary(df2$participant_age)
-
-cor(dfnum, method = c("pearson", "kendall", "spearman"))
+cor(dfnum, method = c("pearson"))
 mcor <- cor(dfnum)
 mcor
-
 col<- colorRampPalette(c("blue", "white", "red"))(20) 
 heatmap(x = mcor, col = col, symm = TRUE)
-corrplot(mcor, type="upper", order="hclust", tl.col="black", tl.srt=45)
+```
 
-chart.Correlation(dfnum, histogram=TRUE, pch=19)
+Ici nous faisons un test de corrélation
+```{r, warning=FALSE}
+respear1nkni<-cor.test(dfnum$n_killed,dfnum$n_injured, method="pearson")
+respear1nkni
+respear1nkage<-cor.test(dfnum$n_killed,dfnum$participant_age, method="pearson")
+respear1nkage
 ```
 
 Comme nous pouvons le voir il n'y a aucun correlation entre les subsets
 
-```{r, warning=FALSE}
 
-bystateinj <- df2 %>% group_by(state) %>% summarize(n = n(), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", ninj)
-ggplot(bystateinj, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
-
-bystatekill <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed))%>% tidyr::gather(key = "type", value = "num", nkill)
-ggplot(bystatekill, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
-
-bystate <- df2 %>% group_by(state) %>% summarize(n = n(), nkill = sum(n_killed), ninj = sum(n_injured)) %>% tidyr::gather(key = "type", value = "num", nkill, ninj)
-ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_bw()
-
-```
-
+Encore une fois nous pouvons remarquer l'absence de corrélations fortes.
 
 ### Deuxième question :
 
@@ -185,25 +171,17 @@ ggplot(bystate, aes(x = state, y = num, fill = type)) + geom_boxplot() + theme_b
 Nous commençons par séléctionner la partie de la data que nous avons besoin (la période entre le 1er janvier 2013 et le 31 décembre 2017 et celle entre le 1 janvier 2018 et le 31 mars 2018) :
 
 ```{r, warning=FALSE}
-
 #Prenons les datas df1 avec les colonnes utiles
 data <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
-
 #et prenons les datas recueillis en 2018 (01-01-2018 -> 31-12-2018)
 data_2018 <- subset(data, data$date >= as.Date('2018-01-01') & data$date <= as.Date('2018-03-31'))
-
 #Pour la période suivante : 01-01-2013 -> 31-12-2017
 data_With_Periode <- subset(data, data$date >= as.Date('2013-01-01') & data$date <= as.Date('2017-12-31'))
-
-
-
 #Etudions plus en détail ce jeu de données
 summary(data_With_Periode)
 #a voir si on peut améliorer cette partie 
-
 #Considérons l'échantillon suivant : data_2018
 summary(data_2018)
-
 ```
 
 
@@ -219,22 +197,18 @@ Pour les variables relatives aux nombres de mort, blesses et l'age des protagoni
 Nous etablissons nos fonctions au préalable ainsi elles faciliterons le traitement et ce sera plus lisible pour la suite.
 
 ```{r, warning=FALSE}
-
 RejectRegion <- function(mu, n, xbar, sigma) {
   res = abs(xbar-mu)/(sigma/sqrt(n))
   return(res)
 }
-
 p_value <- function(alpha, ddl) {
   pval = qt(alpha, df=ddl, lower.tail = FALSE)
   return(pval)
 }
-
 sigma_value <- function(data) {
   res = var(data)
   return(res)
 }
-
 ```
 
 #### Le debut des tests :
@@ -244,21 +218,17 @@ sigma_value <- function(data) {
 n <- length(data_2018)
 # On trouve notre valeur de comparaison (P-value) avec alpha = 5%
 tPVAL <- p_value(0.05, n-1)
-
 ```
 
 #### Pour H0 NB MORT : Le nombre de morts obtenus en 2018 a permis de modifier la moyenne de mort
 
 ```{r, warning=FALSE}
-
 #d'après les resultats obtenus, on a :
 mu_NbMort <- mean(data_2018$n_killed)
 Xbar_NbMort <- mean(data_With_Periode$n_killed)
 sigma_NbMort <- sigma_value(data_2018$n_killed)
-
 # On applique notre test avec les données obtenues
 t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
-
 # On compare et on regarde le résultat 
 if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") appartenant à l'intervalle [", 
@@ -267,7 +237,6 @@ if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") n'appartenant pas à l'intervalle [", 
       -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
 }
-
 ```
 
 
@@ -278,10 +247,8 @@ if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
 mu_NbBlesses <- mean(data_2018$n_injured)
 Xbar_NbBlesses <- mean(data_With_Periode$n_injured)
 sigma_NbBlesses <- sigma_value(data_2018$n_injured)
-
 # On applique notre test avec les données obtenues
 t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
-
 # On compare et on regarde le résultat 
 if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") appartenant à l'intervalle [", 
@@ -296,16 +263,13 @@ if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
 #### Pour HO AGE PARTICIPANT : L'age des participants releves en 2018 a permis de modifier la moyenne d'age 
 
 ```{r, warning=FALSE}
-
 #d'après les resultats obtenus, on a :
 mu_Age <- mean(data_2018$participant_age)
 Xbar_Age <- 29.63 # mean(data_With_Periode$participant_age) la cmd ne marche pas ... à voir
 #tmp : on la saisie à la main
 sigma_Age <- sigma_value(data_2018$participant_age)
-
 # On applique notre test avec les données obtenues
 t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
-
 # On compare et on regarde le résultat 
 if(t_Age >= -tPVAL && t_Age <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") appartenant à l'intervalle [", 
@@ -314,64 +278,85 @@ if(t_Age >= -tPVAL && t_Age <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") n'appartenant pas à l'intervalle [", 
       -tPVAL , ";", tPVAL, "]\n-> Ainsi,on rejette H0\n")
 }
-
 ```
 
 
 ### Troisième question :
 Si l’on prend en compte aussi le mois de l’année dans lequel le fait divers a été commis, est-ce qu’il y a une corrélation forte entre le nombre de fait divers et le mois de l’année ? Quels conclusions en tirez-vous ?
 
-```{r, warning=FALSE}
+Ici, nous devons créer deux nouvelles colonnes afin de traiter le mois et l'année.
+Mais avant ça, il faut faire du preprocessing sur les données afin d'harmoniser la colonne date et de la rendre utilisable.
+On va donc la formater sous forme année, mois, jour.
 
+```{r, warning=FALSE}
 df3 <- subset(df1, select = c(n_killed, n_injured, state, participant_age, date))
 df3$date <- ymd(df3$date)
 str(df3$date)
+```
 
-#We delete the last NA
+A la suite de ça, nous mappons les variables de mois entre 1 et 12 afin de réutiliser des matrices de corrélations
+On supprime les dernieres valeurs "NA" qui se sont rajoutés.
+
+```{r, warning=FALSE}
 df3=na.omit(df3)
-
 df3$month <- month(df3$date, label=TRUE)
 df3$year <- year(df3$date)
-
 df3$month <- factor(df3$month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), labels = c(1,2,3,4,5,6,7,8,9,10,11,12))
+```
 
 
+Produisons des graphiques afin de vérifier la corrélation entre les variables.
+Dans le dernier graphique affiché, on peut voir qu'il n'ya pas de tendance entre les valeurs, la seule tendance que l'on peut remarquer est que le mois de juillet est le plus meurtrier. 
+Certainement avec le 4 Juillet
+```{r, warning=FALSE}
 plotly::ggplotly(df3 %>% select(month) %>% count(month) %>%
                    ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
                    scale_y_continuous(labels=comma) +
                    labs(x='Months', y='Number of incidents', title='Incidents by Month'))
-
-
 plotly::ggplotly(df3 %>% select(year, month) %>% group_by(year) %>% count(month) %>%
                    ggplot(aes(x=month, y=n)) + geom_bar(stat='identity', fill='red') +
                    scale_y_continuous(labels=comma) +  facet_grid(.~year) +
                    labs(x='Months', y='Number of incidents', title='Incidents by Month by year'))
+```
 
 
+Pour finir on utilise une nouvelle fois des matrices de corrélations afin de vérifier si corrélation il y a ou non.
+On doit donc transformer les variables de type string en variable numérique
+Et comme vous pouvez le voir, il n'y en a pas.
 
+```{r, warning=FALSE}
 df3num <- subset(df3, select = c(n_killed, n_injured, participant_age, month, year))
-
-df3num$participant_age
 class(df3$month)
 df3num$month=as.numeric(df3num$month)
 df3num$year=as.numeric(df3num$year)
-
 df3num<-na.omit(df3num)
 cor(df3num, method = c("pearson","kendall","spearman"))
 mcor1 <- cor(df3num)
 mcor1
-
 col<- colorRampPalette(c("blue", "white", "red"))
 corrplot(mcor1, type="upper", order="hclust", tl.col="black", tl.srt=45)
-
 chart.Correlation(df3num, histogram=TRUE, pch=19)
-
 ```
 
-We can conclude that the only month which had a correlation over the year is July, maybe with the 4th.
+
+Ici nous allons refaire des tests de corrélations afin de vérifier si corrélation il y a.
+```{r, warning=FALSE}
+respear3nkni<-cor.test(df3num$n_killed,df3num$n_injured, method="pearson")
+respear3nkni
+respear3nkage<-cor.test(df3num$n_killed,df3num$participant_age, method="pearson")
+respear3nkage
+respear3niage<-cor.test(df3num$n_injured,df3num$participant_age, method="pearson")
+respear3niage
+respear3nkyr<-cor.test(df3num$n_killed,df3num$year, method="pearson")
+respear3nkyr
+respear3nimth<-cor.test(df3num$n_injured,df3num$month, method="pearson")
+respear3nimth
+```
+
+
 
 
 ## Présentation des membres : 
+### Felin Rémi
+### Mosbah Yasmin 
 ### Vighi Alexis
-### Felin Rémi 
-### Mosbah Yasmin
