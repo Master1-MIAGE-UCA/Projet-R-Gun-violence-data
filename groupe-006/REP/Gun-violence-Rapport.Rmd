@@ -197,7 +197,7 @@ Pour les variables relatives aux nombres de mort, blesses et l'age des protagoni
 Nous etablissons nos fonctions au préalable ainsi elles faciliterons le traitement et ce sera plus lisible pour la suite.
 
 ```{r, warning=FALSE}
-RejectRegion <- function(mu, n, xbar, sigma) {
+test <- function(mu, n, xbar, sigma) {
   res = abs(xbar-mu)/(sigma/sqrt(n))
   return(res)
 }
@@ -228,7 +228,7 @@ mu_NbMort <- mean(data_2018$n_killed)
 Xbar_NbMort <- mean(data_With_Periode$n_killed)
 sigma_NbMort <- sigma_value(data_2018$n_killed)
 # On applique notre test avec les données obtenues
-t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
+t_NbMort <- test(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
 # On compare et on regarde le résultat 
 if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbMort ,") appartenant à l'intervalle [", 
@@ -248,7 +248,7 @@ mu_NbBlesses <- mean(data_2018$n_injured)
 Xbar_NbBlesses <- mean(data_With_Periode$n_injured)
 sigma_NbBlesses <- sigma_value(data_2018$n_injured)
 # On applique notre test avec les données obtenues
-t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
+t_NbBlesses <- test(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
 # On compare et on regarde le résultat 
 if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_NbBlesses ,") appartenant à l'intervalle [", 
@@ -269,7 +269,7 @@ Xbar_Age <- 29.63 # mean(data_With_Periode$participant_age) la cmd ne marche pas
 #tmp : on la saisie à la main
 sigma_Age <- sigma_value(data_2018$participant_age)
 # On applique notre test avec les données obtenues
-t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
+t_Age <- test(mu_Age, n, Xbar_Age, sigma_Age)
 # On compare et on regarde le résultat 
 if(t_Age >= -tPVAL && t_Age <= tPVAL) {
   cat("pour alpha = 5%, on a t_nbMort (", t_Age ,") appartenant à l'intervalle [", 
@@ -330,7 +330,7 @@ class(df3$month)
 df3num$month=as.numeric(df3num$month)
 df3num$year=as.numeric(df3num$year)
 df3num<-na.omit(df3num)
-cor(df3num, method = c("pearson","kendall","spearman"))
+cor(df3num, method = c("pearson"))
 mcor1 <- cor(df3num)
 mcor1
 col<- colorRampPalette(c("blue", "white", "red"))
