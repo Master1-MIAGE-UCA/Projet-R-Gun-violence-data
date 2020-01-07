@@ -57,7 +57,7 @@ summary(data_2018)
 #
 
 # Etablissons nos fonctions au préalable, elles faciliterons le traitement et ce sera plus lisible
-RejectRegion <- function(mu, n, xbar, sigma) {
+test <- function(mu, n, xbar, sigma) {
   res = abs(xbar-mu)/(sigma/sqrt(n))
   return(res)
 }
@@ -97,7 +97,7 @@ Xbar_NbMort <- mean(data_With_Periode$n_killed)
 sigma_NbMort <- sigma_value(data_2018$n_killed)
 
 # On applique notre test avec les données obtenues
-t_NbMort <- RejectRegion(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
+t_NbMort <- test(mu_NbMort, n, Xbar_NbMort, sigma_NbMort)
 
 # On compare et on regarde le résultat 
 if(t_NbMort >= -tPVAL && t_NbMort <= tPVAL) {
@@ -120,7 +120,7 @@ Xbar_NbBlesses <- mean(data_With_Periode$n_injured)
 sigma_NbBlesses <- sigma_value(data_2018$n_injured)
 
 # On applique notre test avec les données obtenues
-t_NbBlesses <- RejectRegion(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
+t_NbBlesses <- test(mu_NbBlesses, n, Xbar_NbBlesses, sigma_NbBlesses)
 
 # On compare et on regarde le résultat 
 if(t_NbBlesses >= -tPVAL && t_NbBlesses <= tPVAL) {
@@ -144,7 +144,7 @@ Xbar_Age <- 29.63 # mean(data_With_Periode$participant_age) la cmd ne marche pas
 sigma_Age <- sigma_value(data_2018$participant_age)
 
 # On applique notre test avec les données obtenues
-t_Age <- RejectRegion(mu_Age, n, Xbar_Age, sigma_Age)
+t_Age <- test(mu_Age, n, Xbar_Age, sigma_Age)
 
 # On compare et on regarde le résultat 
 if(t_Age >= -tPVAL && t_Age <= tPVAL) {
